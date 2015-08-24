@@ -24,7 +24,6 @@ module.exports = new (function() {
   };
 
   this.instance_accuracy = function(a, b) {
-    console.log(a + "; " + b);
     // Accepts a pair as well
     if (b === undefined) {
       b = a[1];
@@ -38,7 +37,6 @@ module.exports = new (function() {
     var instance_dices = _.zip(xs, ys).map(function(pair) {
       return metrics.multiset_dice(pair);
     });
-    console.log(instance_dices);
     return numeric.sum(instance_dices) / instance_dices.length;
   };
 
@@ -46,7 +44,6 @@ module.exports = new (function() {
     var instance_accs = _.zip(xs, ys).map(function(pair) {
       return metrics.instance_accuracy(pair);
     });
-    console.log(instance_accs);
     return numeric.sum(instance_accs) / instance_accs.length;
   };
 })();
