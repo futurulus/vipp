@@ -143,7 +143,7 @@ module.exports = new (function() {
    * an example to a learner for prediction.
    */
   this.stripOutput = function(example) {
-    return _.omit(example, ['source', 'output', 'annotated_output']);
+    return _.omit(example, ['source', 'output', 'annotatedOutput']);
   };
 
   /*

@@ -17,19 +17,19 @@ describe("experiment", function() {
   });
 
   describe("stripOutput", function() {
-    it("should remove source, output, and annotated_output", function() {
+    it("should remove source, output, and annotatedOutput", function() {
       var actual = e.stripOutput({input: 'bad movie', output: 'negative',
-                                  annotated_input: ['bad_JJ', 'movie_NN'],
-                                  annotated_output: -2, source: '20a3fe'})
-      var expected = {input: 'bad movie', annotated_input: ['bad_JJ', 'movie_NN']};
+                                  annotatedInput: ['bad_JJ', 'movie_NN'],
+                                  annotatedOutput: -2, source: '20a3fe'})
+      var expected = {input: 'bad movie', annotatedInput: ['bad_JJ', 'movie_NN']};
       assert.deepEqual(actual, expected);
     });
 
     it("should not throw if output is missing", function() {
       var actual = e.stripOutput({input: 'bad movie',
-                                  annotated_input: ['bad_JJ', 'movie_NN'],
+                                  annotatedInput: ['bad_JJ', 'movie_NN'],
                                   source: '20a3fe'})
-      var expected = {input: 'bad movie', annotated_input: ['bad_JJ', 'movie_NN']};
+      var expected = {input: 'bad movie', annotatedInput: ['bad_JJ', 'movie_NN']};
       assert.deepEqual(actual, expected);
     });
   });
