@@ -88,25 +88,30 @@ var Trial = function(filename) {
   return this;
 };
 
+var timing = require('../rsa/timing');
+
 var loadCorpus = function(corpusId) {
   var pathGlob = 'TUNA/corpus/' + corpusId + '/*.xml';
   var corpus = [];
   var trials = glob(pathGlob);
-  process.stdout.write('Loading ' + pathGlob);
+  timing.startTask('trial', trials.length);
   for (var i = 0; i < trials.length; i++) {
+    timing.progress(i);
     corpus.push(Trial(trials[i]));
-    if (~~(i * 10 / trials.length) != ~~((i + 1) * 10 / trials.length)) {
-      process.stdout.write('.');
-    }
   }
-  process.stdout.write(trials.length + ' trials loaded.\n');
+  timing.endTask();
   return corpus;
 };
 
-var count = ['singular', 'plural', '*'];
-var domain = ['furniture', 'people', '*'];
+var count = ['*', 'plural', 'singular'];
+var domain = ['*', 'furniture', 'people'];
+
+timing.startTask('Count', count.length);
 for (var i = 0; i < count.length; i++) {
+  timing.progress(i);
+  timing.startTask('domain', domain.length);
   for (var j = 0; j < domain.length; j++) {
+    timing.progress(j);
     var trials = loadCorpus(count[i] + '/' + domain[j]);
     var outfile = PREFIX + count[i].replace('*', 'all') + '_' +
                            domain[j].replace('*', 'all') + '.json';
@@ -118,6 +123,8 @@ for (var i = 0; i < count.length; i++) {
 
     process.stdout.write('done.\n');
   }
+  timing.endTask();
 }
+timing.endTask();
 
 return 'Conversion complete.';
