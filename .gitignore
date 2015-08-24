@@ -4,5 +4,6 @@ erp_scorers.js
 experiments/adTest/*.csv
 experiments/convergence/*.csv
 *.png
+.*.swp
 TUNA
 rsa/data/
