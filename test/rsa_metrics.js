@@ -2,6 +2,11 @@ var assert = require('chai').assert;
 var metrics = require('../rsa/metrics.js');
 
 describe("metrics", function() {
+  it("should be named", function() {
+    assert.equal(metrics.meanMultisetDice.name, 'meanMultisetDice');
+    assert.equal(metrics.accuracy.name, 'accuracy');
+  });
+
   describe("multisetDice", function() {
     it("should equal 1 for equal arrays", function() {
       var a = ['hair:yes', 'glasses:no'];

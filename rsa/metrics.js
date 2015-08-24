@@ -33,14 +33,14 @@ module.exports = new (function() {
     return _.isEqual(a, b) ? 1 : 0;
   };
 
-  this.meanMultisetDice = function(xs, ys) {
+  this.meanMultisetDice = function meanMultisetDice(xs, ys) {
     var instanceDices = _.zip(xs, ys).map(function(pair) {
       return metrics.multisetDice(pair);
     });
     return numeric.sum(instanceDices) / instanceDices.length;
   };
 
-  this.accuracy = function(xs, ys) {
+  this.accuracy = function accuracy(xs, ys) {
     var instanceAccs = _.zip(xs, ys).map(function(pair) {
       return metrics.instanceAccuracy(pair);
     });
