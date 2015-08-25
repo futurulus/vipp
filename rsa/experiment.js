@@ -31,13 +31,13 @@ module.exports = new (function() {
     for(var split = 0; split < numFolds; split++) {
       var testStart = Math.floor(data.length * split / numFolds);
       var testEnd = Math.floor(data.length * (split + 1) / numFolds);
-      var trainData = data.slice(0, testStart) + data.slice(testEnd);
+      var trainData = data.slice(0, testStart).concat(data.slice(testEnd));
       var testData = data.slice(testStart, testEnd);
       splitStats.push(experiment.trainTest(learner, trainData, testData, metrics));
     }
 
     var combined = experiment.combineStats(splitStats);
-    combined.experiment = numSplits + ' cross-validation folds';
+    combined.experiment = numFolds + ' cross-validation folds';
     return combined;
   };
 
