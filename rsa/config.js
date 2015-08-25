@@ -16,13 +16,13 @@ module.exports = new (function () {
   var options = undefined;
 
   var preventOtherOptions = function (arg) {
-    arg = arg.replace(/^-+/, '').replace(/=.*$/, '');
-    if (!optionDefs.default.hasOwnProperty(arg) &&
-        !optionDefs.alias.hasOwnProperty(arg) &&
-        optionDefs.string.indexOf(arg) == -1 &&
-        optionDefs.boolean.indexOf(arg) == -1) {
+    var argName = arg.replace(/^-+/, '').replace(/=.*$/, '');
+    if (!optionDefs.default.hasOwnProperty(argName) &&
+        !optionDefs.alias.hasOwnProperty(argName) &&
+        optionDefs.string.indexOf(argName) == -1 &&
+        optionDefs.boolean.indexOf(argName) == -1) {
       if (arg.indexOf('-') === 0) {
-        throw Error('received unexpected option "' + arg + '"');
+        throw Error('received unexpected option "' + argName + '"');
       } else {
         throw Error('received unexpected positional argument "' + arg + '"');
       }
