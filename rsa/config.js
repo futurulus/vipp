@@ -7,7 +7,7 @@ module.exports = new (function () {
   var config = this;
 
   var optionDefs = {
-    string: ['--run_dir'],
+    string: ['run_dir'],
     boolean: [],
     alias: {},
     default: {},
@@ -19,8 +19,8 @@ module.exports = new (function () {
     var argName = arg.replace(/^-+/, '').replace(/=.*$/, '');
     if (!optionDefs.default.hasOwnProperty(argName) &&
         !optionDefs.alias.hasOwnProperty(argName) &&
-        optionDefs.string.indexOf(argName) == -1 &&
-        optionDefs.boolean.indexOf(argName) == -1) {
+        optionDefs.string.indexOf(argName) === -1 &&
+        optionDefs.boolean.indexOf(argName) === -1) {
       if (arg.indexOf('-') === 0) {
         throw Error('received unexpected option "' + argName + '"');
       } else {
@@ -85,18 +85,24 @@ module.exports = new (function () {
       var origOut = process.stdout.write;
       process.stdout.write = function(string, encoding, fd) {
         origOut.apply(process.stdout, arguments);
-        fs.appendFile(outfile, string, {encoding: encoding}, emptyCallback);
+        fs.appendFileSync(outfile, string, {encoding: encoding});
       };
 
       var origErr = process.stderr.write;
       process.stderr.write = function(string, encoding, fd) {
         origErr.apply(process.stderr, arguments);
-        fs.appendFile(errfile, string, {encoding: encoding}, emptyCallback);
+        fs.appendFileSync(errfile, string, {encoding: encoding});
       };
     }
-  }
 
-  this.redirectOutput();
+    // monkey-patching stdout/stderr with synchronous file writing +
+    // delayed process shutdown on error = yuck. But if we use async
+    // OR terminate immediately, exceptions don't get logged...
+    process.on('uncaughtException', function (err) {
+      console.error(err.stack);
+      process.nextTick(function() { process.exit(1); });
+    })
+  }
 
   this.dump = function(data, filename, lines, options) {
     var filePath = config.getFilePath(filename);

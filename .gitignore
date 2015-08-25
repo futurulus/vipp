@@ -7,3 +7,4 @@ experiments/convergence/*.csv
 .*.swp
 TUNA
 rsa/data/
+experiments/runs/
