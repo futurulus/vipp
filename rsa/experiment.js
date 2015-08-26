@@ -1,5 +1,5 @@
 var _ = require('underscore');
-var jStat = require('jstat').jStat;
+var jStat = require('jStat').jStat;
 
 /* Number of decimal places of precision in output reporting. */
 var PRECISION = 3;

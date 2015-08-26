@@ -8,12 +8,18 @@
     "url": "https://github.com/dritchie/vipp"
   },
   "dependencies": {
-    "numeric": "~1.2.6",
-    "underscore": "^1.8.3",
-    "sweet.js": "^0.7.1",
     "brfs": "^1.4.0",
+    "canvas": "^1.2.3",
+    "chai": "^3.2.0",
+    "glob": "^5.0.14",
+    "jStat": "^1.4.0",
+    "mocha": "^2.2.5",
+    "numeric": "~1.2.6",
     "present": "^0.0.6",
-    "canvas": "^1.2.3"
+    "pycollections": "^0.1.4",
+    "sweet.js": "^0.7.1",
+    "underscore": "^1.8.3",
+    "xml2js": "^0.4.10"
   },
   "bugs": {
     "url": "https://github.com/dritchie/vipp/issues"
