@@ -49,7 +49,8 @@ module.exports = new (function () {
     allow_partial = (allow_partial === undefined ? false : allow_partial);
 
     args = args || process.argv;
-    if (args[1].indexOf('vipp') > -1) {
+    var mainScript = args[1].split('/');
+    if (mainScript[mainScript.length - 1].indexOf('vipp') > -1) {
       // [ 'node', 'vipp', 'main.js', '--other', '--options' ]
       args = args.slice(3);
     } else {
