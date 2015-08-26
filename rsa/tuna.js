@@ -23,8 +23,8 @@ config.addOption('train_percentage', 0.8);  // used only if random_splits is tru
 var options = config.getOptions();
 
 var learner = new (learners[options.learner_type])(options);
-var getInstances = (options.generation ? instances.getInterpretation :
-                                         instances.getGeneration);
+var getInstances = (options.generation ? instances.getGeneration :
+                                         instances.getInterpretation);
 var data = getInstances('rsa/data/tuna_' + options.data_dir.replace(/\//g, '_') + '.json');
 var metricFuncs = _.map(options.metrics.split(','), _.propertyOf(metrics));
 var results;
