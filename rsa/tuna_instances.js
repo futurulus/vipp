@@ -26,7 +26,33 @@ module.exports = new (function() {
         input: trial.stringDescription,
         annotatedInput: trial.description,
         output: output,
-        context: {number: output.length, domain: domain},
+        context: {generation: false, number: output.length, domain: domain},
+        source: trial,
+      };
+    });
+  }
+
+  this.getGeneration = function(filename) {
+    var trials = JSON.parse(fs.readFileSync(filename));
+
+    return _.map(trials, function(trial) {
+      var shuffled = _.shuffle(trial.domain.entity);
+      var input = _.chain(_.range(shuffled.length)).
+                    filter(function (k) { return shuffled[k].type === 'target'; }).
+                    value();
+      var domain = _.chain(shuffled).
+                     pluck('attribute').
+                     map(function(attribute) {
+                       return attribute.map(tuna_instances.attrString);
+                     }).
+                     value();
+      var targets = _.map(input, function(k) { return domain[k]; });
+      return {
+        input: input,
+        annotatedInput: targets,
+        output: trial.stringDescription,
+        annotatedOutput: trial.description,
+        context: {generation: true, domain: domain},
         source: trial,
       };
     });

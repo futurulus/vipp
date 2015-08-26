@@ -12,6 +12,8 @@ module.exports = new (function() {
       a = a[0];
     }
 
+    if (typeof a === 'string') a = a.split(' ');  // TODO: real tokenization
+    if (typeof b === 'string') b = b.split(' ');
     var counts1 = new Counter(a);
     var counts2 = new Counter(b);
     var num = 2 * numeric.sum(counts1.items().map(function(attrPair) {

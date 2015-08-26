@@ -27,7 +27,8 @@ submit(("node"
                  "plural/furniture" &
                  "plural/people")
 //  -("-filter_loc", "true" & "false")
-//  -("-generation", "false" & "true")
+  -("-generation", "true" | "false")
+  -("-gen_rules", "true" | "false")
 //  -("-random_splits", "true")
   -("-cv", 5)
 //  -("-train_percentage", 0.7)

@@ -22,4 +22,7 @@ parallel(32)
 submit(("node"
   ->"rsa/tuna.js"
   -("-cv", 2)
+  -("-generation", true)
+  -("-gen_rules", true)
+  -("-data_dir", "singular/furniture")
 ))
