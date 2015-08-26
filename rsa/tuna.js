@@ -1,4 +1,6 @@
 var _ = require('underscore');
+var seedrandom = require('seedrandom');
+seedrandom('reproducible research is awesome', {global: true});
 
 var config = require('../rsa/config');
 config.redirectOutput();

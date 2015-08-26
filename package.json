@@ -17,6 +17,7 @@
     "numeric": "~1.2.6",
     "present": "^0.0.6",
     "pycollections": "^0.1.4",
+    "seedrandom": "^2.4.2",
     "sweet.js": "^0.7.1",
     "underscore": "^1.8.3",
     "xml2js": "^0.4.10"
