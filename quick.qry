@@ -22,24 +22,5 @@ parallel(32)
 submit(("node"
   ->"rsa/tuna.js"
   -("-run_dir", touch(""))
-  -("-data_dir", "singular/furniture" &
-                 "singular/people" &
-                 "plural/furniture" &
-                 "plural/people")
-//  -("-filter_loc", "true" & "false")
-//  -("-generation", "false" & "true")
-//  -("-random_splits", "true")
-  -("-cv", 5)
-//  -("-train_percentage", 0.7)
-//  -("-features")
-//  ->("cross_product", "attr_type", "attr_count", "attr_pair")
-//  -("-max_gen_length", 4)
-//  -("-sgd_eta", 0.01)
-//  -("-sgd_max_iters", 10)
-//  -("-l2_coeff", 0.01)
-//  -("-sgd_use_adagrad", "true")
-//  -("-samples_x", 10)
-//  -("-null_message", "true")
-//  -("-only_relevant_alts", "false")
-  -("-verbose", 1)
+  -("-cv", 2)
 ))
