@@ -12,20 +12,21 @@ module.exports = new (function() {
     var trials = JSON.parse(fs.readFileSync(filename));
 
     return _.map(trials, function(trial) {
-      var output = _.where(trial.domain.entity, {type: 'target'})[0].
-                     attribute.map(tuna_instances.attrString);
-      var altOutputs = _.chain(trial.domain.entity).
-                         pluck('attribute').
-                         map(function(attribute) {
-                           return attribute.map(tuna_instances.attrString);
-                         }).
-                         shuffle().
-                         value();
+      var shuffled = _.shuffle(trial.domain.entity);
+      var output = _.chain(_.range(shuffled.length)).
+                     filter(function (k) { return shuffled[k].type === 'target'; }).
+                     value();
+      var domain = _.chain(shuffled).
+                     pluck('attribute').
+                     map(function(attribute) {
+                       return attribute.map(tuna_instances.attrString);
+                     }).
+                     value();
       return {
         input: trial.stringDescription,
         annotatedInput: trial.description,
         output: output,
-        altOutputs: altOutputs,
+        context: {number: output.length, domain: domain},
         source: trial,
       };
     });

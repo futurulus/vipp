@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 module.exports = new (function() {
   var learner = this;
 
@@ -12,7 +14,11 @@ module.exports = new (function() {
     },
 
     predict: function(example) {
-      return example.altOutputs[0];
+      if (example.context.number !== undefined) {
+        return _.range(example.context.number);
+      } else {
+        return [0];
+      }
     },
   };
 })();
