@@ -4,7 +4,7 @@ exec /u/nlp/packages/scala/scala-2.11.0/bin/scala -cp /u/nlp/packages/qry/lib/qr
 import Qry._  // Qry Core
 import Stanford._  // Utilities for Stanford
 
-using("experiments/runs/")
+//using("experiments/runs/")
 
 /*
 using("pbs")
@@ -21,6 +21,5 @@ parallel(32)
 
 submit(("node"
   ->"rsa/tuna.js"
-  -("-run_dir", touch(""))
   -("-cv", 2)
 ))
