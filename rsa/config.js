@@ -63,6 +63,7 @@ module.exports = new (function () {
     } else {
       if (options === undefined) {
         options = parseArgs(args, _.extendOwn(optionDefs, {unknown: preventOtherOptions}));
+        config.dumpPretty(options, 'config.json');
       }
       return options;
     }
@@ -111,18 +112,18 @@ module.exports = new (function () {
       try {
         var out = fs.createWriteStream(filePath, options);
         _.each(data, function(item) {
-          out.write(JSON.stringify(item));
+          out.write(JSON.stringify(item) + '\n');
         })
       } catch(err) {
         console.log(err.stack);
       }
     } else {
-      fs.writeFile(filePath, JSON.stringify(data), options, emptyCallback);
+      fs.writeFile(filePath, JSON.stringify(data) + '\n', options, emptyCallback);
     }
   };
 
   this.dumpPretty = function(data, filename, options) {
     var filePath = config.getFilePath(filename);
-    fs.writeFile(filePath, JSON.stringify(data, null, 2), options, emptyCallback);
+    fs.writeFile(filePath, JSON.stringify(data, null, 2) + '\n', options, emptyCallback);
   };
 })();

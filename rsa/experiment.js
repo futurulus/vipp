@@ -1,5 +1,6 @@
 var _ = require('underscore');
 var jStat = require('jStat').jStat;
+var config = require('./config');
 
 /* Number of decimal places of precision in output reporting. */
 var PRECISION = 3;
@@ -33,7 +34,7 @@ module.exports = new (function() {
       var testEnd = Math.floor(data.length * (split + 1) / numFolds);
       var trainData = data.slice(0, testStart).concat(data.slice(testEnd));
       var testData = data.slice(testStart, testEnd);
-      splitStats.push(experiment.trainTest(learner, trainData, testData, metrics));
+      splitStats.push(experiment.trainTest(learner, trainData, testData, metrics, '.' + split));
     }
 
     var combined = experiment.combineStats(splitStats);
@@ -58,7 +59,7 @@ module.exports = new (function() {
       var shuffled = _.shuffle(data);
       var trainData = _.first(shuffled, trainSize);
       var testData = _.rest(shuffled, trainSize);
-      splitStats.push(experiment.trainTest(learner, trainData, testData, metrics));
+      splitStats.push(experiment.trainTest(learner, trainData, testData, metrics, '.' + split));
     }
 
     var combined = experiment.combineStats(splitStats);
@@ -73,7 +74,7 @@ module.exports = new (function() {
    * mapping each metric name to a singleton array containing the value
    * of the metric.
    */
-  this.trainTest = function(learner, trainData, testData, metrics) {
+  this.trainTest = function(learner, trainData, testData, metrics, suffix) {
     var auxStats = learner.train(trainData);
     auxStats.trainSize = trainData.length;
     auxStats.testSize = testData.length;
@@ -83,12 +84,16 @@ module.exports = new (function() {
       var input = experiment.stripOutput(example);
       return learner.predict(input);
     })
+    experiment.dumpPredictions(trainData, trainPredictions,
+                               'predictions.train' + (suffix ? suffix : ''));
 
     var testGolds = _.map(testData, function(example) { return example.output; });
     var testPredictions = _.map(testData, function(example) {
       var input = experiment.stripOutput(example);
       return learner.predict(input);
     })
+    experiment.dumpPredictions(testData, testPredictions,
+                               'predictions.test' + (suffix ? suffix : ''));
 
     auxStats.experiment = 'Provided train/test split';
     var results = experiment.evaluatePredictions(trainPredictions, trainGolds,
@@ -114,6 +119,20 @@ module.exports = new (function() {
       }
       return [prefix + metric.name, [metric(predictions, golds)]];
     }).object().extendOwn(auxStats).value();
+  };
+
+  /*
+   * Write out a one-JSON-per-line file to `filename` in the run
+   * directory containing the examples in `data` with an added `prediction`
+   * field containing the system's prediction from the argument `predictions`.
+   * `data` and `predictions` should be arrays of the same length.
+   */
+  this.dumpPredictions = function(data, predictions, filename) {
+    var zipped = _.zip(data, predictions).
+                   map(function(pair) {
+                     return _.extend(pair[0], {prediction: pair[1]});
+                   });
+    config.dump(zipped, filename, true);
   };
 
   /*
@@ -148,10 +167,12 @@ module.exports = new (function() {
 
   /*
    * Return a string summarizing the contents of a `stats` object
-   * for human consumption.
+   * for human consumption, and dump the stats out to a results
+   * file in the run directory.
    */
   this.report = function(stats) {
     var lines = [stats.experiment];
+    var resultsDump = _.clone(stats);
     _.chain(stats).
       pairs().
       each(function(pair) {
@@ -161,7 +182,9 @@ module.exports = new (function() {
         var values = pair[1];
         if (_.isArray(values)) {
           var mean = jStat.mean(values);
+          resultsDump[key + '_mean'] = mean;
           var ci = jStat.tci(mean, 0.05, values);
+          resultsDump[key + '_ci'] = ci;
           lines.push(key + ': ' + mean.toFixed(PRECISION) +
                      ' (' + ci[0].toFixed(PRECISION) +
                      '--' + ci[1].toFixed(PRECISION) + ')');
@@ -169,6 +192,7 @@ module.exports = new (function() {
           lines.push(key + ': ' + values);
         }
       });
+    config.dumpPretty(resultsDump, 'results.json');
     return lines.join('\n');
   };
 })();
