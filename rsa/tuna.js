@@ -8,9 +8,11 @@ config.redirectOutput();
 var experiment = require('../rsa/experiment');
 var metrics = require('../rsa/metrics');
 var instances = require('../rsa/tuna_instances');
+var baselines = require('../rsa/baselines');
 
 var learners = {
-  dummy: require('../rsa/learner').DummyLearner,
+  dummy: baselines.DummyBaseline,
+  glove: baselines.GloveSumBaseline,
 };
 
 config.addOption('verbose', 0);
@@ -24,16 +26,18 @@ config.addOption('train_percentage', 0.8);  // used only if random_splits is tru
 
 var options = config.getOptions();
 
-var learner = new (learners[options.learner_type])(options);
-var getInstances = (options.generation ? instances.getGeneration :
-                                         instances.getInterpretation);
-var data = getInstances('rsa/data/tuna_' + options.data_dir.replace(/\//g, '_') + '.json');
-var metricFuncs = _.map(options.metrics.split(','), _.propertyOf(metrics));
-var results;
-if (options.random_splits) {
-  results = experiment.report(experiment.randomSplits(learner, data, metricFuncs,
-                                                   options.cv, options.train_percentage));
-} else {
-  results = experiment.report(experiment.crossValidate(learner, data, metricFuncs, options.cv));
-}
-console.log(results);
+require('./glove').onReady(function () {
+  var learner = new (learners[options.learner_type])(options);
+  var getInstances = (options.generation ? instances.getGeneration :
+                                           instances.getInterpretation);
+  var data = getInstances('rsa/data/tuna_' + options.data_dir.replace(/\//g, '_') + '.json');
+  var metricFuncs = _.map(options.metrics.split(','), _.propertyOf(metrics));
+  var results;
+  if (options.random_splits) {
+    results = experiment.report(experiment.randomSplits(learner, data, metricFuncs,
+                                                     options.cv, options.train_percentage));
+  } else {
+    results = experiment.report(experiment.crossValidate(learner, data, metricFuncs, options.cv));
+  }
+  console.log(results);
+});

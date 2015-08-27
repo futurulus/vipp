@@ -26,9 +26,10 @@ submit(("node"
                  "singular/people" &
                  "plural/furniture" &
                  "plural/people")
+  -("-learner_type", "glove")
 //  -("-filter_loc", "true" & "false")
-  -("-generation", "true" & "false")
-  -("-gen_rules", "false" & "true")
+  -("-generation", "false")
+//  -("-gen_rules", "false" & "true")
 //  -("-random_splits", "true")
   -("-cv", 5)
 //  -("-train_percentage", 0.7)

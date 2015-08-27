@@ -1,6 +1,7 @@
 var _ = require('underscore');
 var jStat = require('jStat').jStat;
 var config = require('./config');
+var timing = require('./timing');
 
 /* Number of decimal places of precision in output reporting. */
 var PRECISION = 3;
@@ -29,13 +30,16 @@ module.exports = new (function() {
    */
   this.crossValidate = function(learner, data, metrics, numFolds) {
     var splitStats = [];
+    timing.startTask('CV fold', numFolds);
     for(var split = 0; split < numFolds; split++) {
+      timing.progress(split);
       var testStart = Math.floor(data.length * split / numFolds);
       var testEnd = Math.floor(data.length * (split + 1) / numFolds);
       var trainData = data.slice(0, testStart).concat(data.slice(testEnd));
       var testData = data.slice(testStart, testEnd);
       splitStats.push(experiment.trainTest(learner, trainData, testData, metrics, '.' + split));
     }
+    timing.endTask();
 
     var combined = experiment.combineStats(splitStats);
     combined.experiment = numFolds + ' cross-validation folds';
@@ -55,12 +59,15 @@ module.exports = new (function() {
   this.randomSplits = function(learner, data, metrics, numSplits, trainFrac) {
     var splitStats = [];
     var trainSize = Math.floor(data.length * trainFrac);
+    timing.startTask('train-test split', numSplits);
     for (var split = 0; split < numSplits; split++) {
+      timing.progress(split);
       var shuffled = _.shuffle(data);
       var trainData = _.first(shuffled, trainSize);
       var testData = _.rest(shuffled, trainSize);
       splitStats.push(experiment.trainTest(learner, trainData, testData, metrics, '.' + split));
     }
+    timing.endTask();
 
     var combined = experiment.combineStats(splitStats);
     combined.experiment = numSplits + ' random splits, trainFrac=' + trainFrac;
@@ -76,6 +83,11 @@ module.exports = new (function() {
    */
   this.trainTest = function(learner, trainData, testData, metrics, suffix) {
     var auxStats = learner.train(trainData);
+    if (auxStats === undefined) auxStats = {};
+    if ('params' in auxStats) {
+      config.dump(auxStats.params, 'params' + (suffix ? suffix : ''));
+      delete auxStats.params;
+    }
     auxStats.trainSize = trainData.length;
     auxStats.testSize = testData.length;
 

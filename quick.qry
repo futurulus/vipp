@@ -21,9 +21,11 @@ parallel(32)
 
 submit(("node"
   ->"rsa/tuna.js"
+  -("-run_dir", "experiments/runs/test")
 //  -("-run_dir", touch(""))
   -("-cv", 2)
-  -("-generation", true)
-  -("-gen_rules", true)
+//  -("-generation", true)
+//  -("-gen_rules", true)
   -("-data_dir", "singular/furniture")
+  -("-learner_type", "glove")
 ))
