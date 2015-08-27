@@ -32,6 +32,18 @@ module.exports = new (function() {
       a = a[0];
     }
 
+    a = _.sortBy(a, function(e) { return e; });
+    b = _.sortBy(b, function(e) { return e; });
+    return _.isEqual(a, b) ? 1 : 0;
+  };
+
+  this.orderedInstanceAccuracy = function(a, b) {
+    // Accepts a pair as well
+    if (b === undefined) {
+      b = a[1];
+      a = a[0];
+    }
+
     return _.isEqual(a, b) ? 1 : 0;
   };
 
@@ -42,10 +54,18 @@ module.exports = new (function() {
     return numeric.sum(instanceDices) / instanceDices.length;
   };
 
+  this.orderedAccuracy = function orderedAccuracy(xs, ys) {
+    var instanceAccs = _.zip(xs, ys).map(function(pair) {
+      return metrics.orderedInstanceAccuracy(pair);
+    });
+    return numeric.sum(instanceAccs) / instanceAccs.length;
+  };
+
   this.accuracy = function accuracy(xs, ys) {
     var instanceAccs = _.zip(xs, ys).map(function(pair) {
       return metrics.instanceAccuracy(pair);
     });
     return numeric.sum(instanceAccs) / instanceAccs.length;
   };
+
 })();
