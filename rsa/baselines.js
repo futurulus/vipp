@@ -6,6 +6,10 @@ var glove = require('./glove');
 var timing = require('./timing');
 
 config.addOption('gen_rules', true, 'boolean');
+config.addOption('training_method', 'adadelta', 'string');
+config.addOption('l2_coeff', 0.001);
+config.addOption('batch_size', 10);
+config.addOption('num_epochs', 10);
 
 
 var argmax = function(list, key, n) {
@@ -75,6 +79,13 @@ module.exports = new (function() {
    * embeddings) as features.
    */
   this.GloveSumBaseline = function(options) {
+    this.genRules = options.gen_rules;
+    this.trainingOptions = {
+      method: options.training_method,
+      l2_decay: options.l2_coeff,
+      batch_size: options.batch_size,
+    };
+    this.numEpochs = options.num_epochs;
   };
   this.GloveSumBaseline.prototype = {
     train: function(data) {
@@ -115,15 +126,9 @@ module.exports = new (function() {
                            {type: 'fc', num_neurons: inputDim / 2, activation: 'tanh'},
                            {type: 'softmax', num_classes: 2}]);
 
-      // TODO: extract params, numIters to command line arguments
-      var trainer = new convnetjs.Trainer(this.net, {
-        method: 'adadelta',
-        l2_decay: 0.001,
-        batch_size: 10
-      });
-      var numEpochs = 2;
-      timing.startTask('epoch', numEpochs);
-      for (var epoch = 0; epoch < numEpochs; epoch++) {
+      var trainer = new convnetjs.Trainer(this.net, this.trainingOptions);
+      timing.startTask('epoch', this.numEpochs);
+      for (var epoch = 0; epoch < this.numEpochs; epoch++) {
         timing.progress(epoch);
         timing.startTask('example', x.length);
         for (var i = 0; i < x.length; i++) {

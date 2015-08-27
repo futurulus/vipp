@@ -22,8 +22,8 @@ parallel(32)
 submit(("node"
   ->"rsa/tuna.js"
   -("-run_dir", touch(""))
-  -("-data_dir", "singular/furniture" &
-                 "singular/people" &
+  -("-data_dir", /*"singular/furniture" &
+                 "singular/people" &*/
                  "plural/furniture" &
                  "plural/people")
   -("-learner_type", "glove")
@@ -39,6 +39,7 @@ submit(("node"
 //  -("-sgd_eta", 0.01)
 //  -("-sgd_max_iters", 10)
 //  -("-l2_coeff", 0.01)
+  -("-num_epochs", 10)
 //  -("-sgd_use_adagrad", "true")
 //  -("-samples_x", 10)
 //  -("-null_message", "true")
