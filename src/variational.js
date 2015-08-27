@@ -22,9 +22,9 @@ var coroutine = {
 
 // Run a variational program with a given param set
 // (This is just needed to track the param index)
-function run(guide, args, params) {
+function run(guide, params, args) {
 	coroutine.paramIndex = 0;
-	return guide(args, params);
+	return guide(params, args);
 }
 
 // target: original probabilistic program
