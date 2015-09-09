@@ -27,6 +27,103 @@ function run(guide, params, args) {
 	return guide(params, args);
 }
 
+// Define the inference coroutine
+function Trace() {};
+Trace.prototype = {
+  erpScoreRaw: function(erp, params, val) {
+    var score = erp.score(params, val);
+    this.score += score;
+    return score;
+  },
+  erpScoreAD: function(erp, params, val) {
+    var score = erp.adscore(params, val);
+    this.score = ad_add(this.score, score);
+    return score;
+  },
+  sample: function(erp, params) {
+    var val = this.choices[this.choiceIndex];
+    if (val === undefined) {
+      // We don't store tapes in the trace, just raw numbers, so that
+      //    re-running with the target program works correctly.
+      var pparams = params.map(function(x) { return primal(x); });
+      val = erp.sample(pparams);
+      this.choices.push(val);
+      this.choiceInfo.push({ erp: erp, params: params, score: 0.0 });
+    }
+    var score = this.erpScore(erp, params, val);
+    this.choiceInfo[this.choiceIndex] = { erp: erp, params: params, score: score };
+    this.choiceIndex++;
+    return val;
+  },
+  factorRaw: function(num) {
+    this.score += num;
+  },
+  factorAD: function(num) {
+    this.score = ad_add(this.score, num);
+  },
+  run: function(thunk, ad) {
+    this.choices = [];
+    this.choiceInfo = [];
+    return this.rerun(thunk, ad);
+  },
+  rerun: function(thunk, ad) {
+    this.paramIndex = 0;
+    this.choiceIndex = 0;
+    this.score = 0;
+    this.erpScore = (ad ? this.erpScoreAD : this.erpScoreRaw);
+    this.factor = (ad ? this.factorAD : this.factorRaw);
+    var oldCoroutine = coroutine;
+    coroutine = this;
+    this.returnVal = thunk();
+    coroutine = oldCoroutine
+    return this.returnVal;
+  },
+  mhstep: function(thunk, ad) {
+    // Make proposal
+    var cindex = Math.floor(Math.random()*this.choices.length);
+    var info = this.choiceInfo[cindex];
+    var currval = this.choices[cindex];
+    var rvsLP = info.score;
+    var newval = info.erp.sample(info.params);
+    var fwdLP = info.erp.score(info.params, newval);
+
+    // Run trace update
+    var oldChoices = _.clone(this.choices);
+    var oldChoiceInfo = _.clone(this.choiceInfo);
+    var oldScore = this.score;
+    var oldRetVal = this.returnVal;
+    this.choices[cindex] = newval;
+    this.rerun(thunk, ad);
+
+    // Accept/reject
+    var acceptProb = Math.min(1.0, Math.exp(this.score - oldScore + rvsLP - fwdLP));
+    // console.log('-----------------');
+    // console.log('newScore: ' + this.score + ', oldScore: ' + oldScore);
+    // console.log('fwdLP: ' + fwdLP + ', rvsLP: ' + rvsLP);
+    // console.log('acceptProb: ', acceptProb);
+    if (Math.random() < acceptProb) {
+      // console.log('ACCEPT');
+    } else {
+      // console.log('REJECT');
+      this.choices = oldChoices;
+      this.choiceInfo = oldChoiceInfo;
+      this.score = oldScore;
+      this.returnVal = oldRetVal;
+    }
+  }
+}
+
+// Score the *current* set of erp choices against a different
+// guide distribution, possibly using different parameters or
+// arguments.
+function score(guide, params, args) {
+  var trace = new Trace();
+  trace.choices = _.clone(coroutine.choices);
+  trace.choiceInfo = _.clone(coroutine.choiceInfo);
+  trace.rerun(function() { return guide(params, args); });
+  return trace.score;
+}
+
 // target: original probabilistic program
 // guide: variational program
 // args: inputs to program (i.e. observed evidence)
@@ -82,91 +179,6 @@ function infer(target, guide, args, opts) {
 		}
 	} else regularize = function(p0, p1, learningRate) { return p1; };
 
-	// Define the inference coroutine
-	function Trace() {};
-	Trace.prototype = {
-		erpScoreRaw: function(erp, params, val) {
-			var score = erp.score(params, val);
-			this.score += score;
-			return score;
-		},
-		erpScoreAD: function(erp, params, val) {
-			var score = erp.adscore(params, val);
-			this.score = ad_add(this.score, score);
-			return score;
-		},
-		sample: function(erp, params) {
-			var val = this.choices[this.choiceIndex];
-			if (val === undefined) {
-				// We don't store tapes in the trace, just raw numbers, so that
-				//    re-running with the target program works correctly.
-				var pparams = params.map(function(x) { return primal(x); });
-				val = erp.sample(pparams);
-				this.choices.push(val);
-				this.choiceInfo.push({ erp: erp, params: params, score: 0.0 });
-			}
-			var score = this.erpScore(erp, params, val);
-			this.choiceInfo[this.choiceIndex] = { erp: erp, params: params, score: score };
-			this.choiceIndex++;
-			return val;
-		},
-		factorRaw: function(num) {
-			this.score += num;
-		},
-		factorAD: function(num) {
-			this.score = ad_add(this.score, num);
-		},
-		run: function(thunk, ad) {
-			this.choices = [];
-			this.choiceInfo = [];
-			return this.rerun(thunk, ad);
-		},
-		rerun: function(thunk, ad) {
-			this.paramIndex = 0;
-			this.choiceIndex = 0;
-			this.score = 0;
-			this.erpScore = (ad ? this.erpScoreAD : this.erpScoreRaw);
-			this.factor = (ad ? this.factorAD : this.factorRaw);
-			var oldCoroutine = coroutine;
-			coroutine = this;
-			this.returnVal = thunk();
-			coroutine = oldCoroutine
-			return this.returnVal;
-		},
-		mhstep: function(thunk, ad) {
-			// Make proposal
-			var cindex = Math.floor(Math.random()*this.choices.length);
-			var info = this.choiceInfo[cindex];
-			var currval = this.choices[cindex];
-			var rvsLP = info.score;
-			var newval = info.erp.sample(info.params);
-			var fwdLP = info.erp.score(info.params, newval);
-
-			// Run trace update
-			var oldChoices = _.clone(this.choices);
-			var oldChoiceInfo = _.clone(this.choiceInfo);
-			var oldScore = this.score;
-			var oldRetVal = this.returnVal;
-			this.choices[cindex] = newval;
-			this.rerun(thunk, ad);
-
-			// Accept/reject
-			var acceptProb = Math.min(1.0, Math.exp(this.score - oldScore + rvsLP - fwdLP));
-			// console.log('-----------------');
-			// console.log('newScore: ' + this.score + ', oldScore: ' + oldScore);
-			// console.log('fwdLP: ' + fwdLP + ', rvsLP: ' + rvsLP);
-			// console.log('acceptProb: ', acceptProb);
-			if (Math.random() < acceptProb) {
-				// console.log('ACCEPT');
-			} else {
-				// console.log('REJECT');
-				this.choices = oldChoices;
-				this.choiceInfo = oldChoiceInfo;
-				this.score = oldScore;
-				this.returnVal = oldRetVal;
-			}
-		}
-	}
 
 	// Default trace
 	var trace = new Trace();
@@ -513,6 +525,7 @@ function factor(num) {
 // Transform specifies how the value should be transformed.
 // The sampler may be used to sample an initial val (if 'initialVal' is undefined).
 function param(params, initialVal, transform, sampler, hypers) {
+  if (params.values === undefined) console.log(params);
 	if (coroutine.paramIndex == params.values.length) {
 		if (initialVal === undefined)
 			initialVal = sampler(hypers);
@@ -531,6 +544,7 @@ function param(params, initialVal, transform, sampler, hypers) {
 module.exports = {
 	run: run,
 	infer: infer,
+  score: score,
 	sample: sample,
 	factor: factor,
 	param: param
