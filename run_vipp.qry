@@ -1,0 +1,28 @@
+#!/bin/bash
+exec /u/nlp/packages/scala/scala-2.11.0/bin/scala -cp /u/nlp/packages/qry/lib/qry.jar:$JAVANLP_HOME/projects/core/classes:$JAVANLP_HOME/projects/more/classes:$JAVANLP_HOME/projects/more/lib/typesafe-config-1.0.0.jar:$JAVANLP_HOME/projects/research/classes "$0" "$@"
+!#
+import Qry._  // Qry Core
+import Stanford._  // Utilities for Stanford
+
+using("experiments/runs/")
+
+/*
+using("pbs")
+
+PBS.name     = main.substring(main.lastIndexOf(".") + 1).replace(" ", "_")
+PBS.queue    = Queue.NLP  // {SCAIL, NLP, JAG, JOHN}
+PBS.priority = Priority.NORMAL  // {HIGH, NORMAL, BACKGROUND, PREEMPTABLE}
+PBS.cores    = 1
+PBS.memory   = "4gb"  // For Java jobs, memory is also auto detected
+//PBS.hosts   = "jude0,jude1"  // An optional list of hosts to run on.
+*/
+
+parallel(32)
+
+submit(("./vipp"
+  ->"examples/rsa.js"
+  -("-run_dir", touch(""))
+  -("-l2Coeff", "0" & "0.01" & "1.0")
+  -("-learnRate", "0.0001" & "0.01" & "1.0")
+  -("-hiddenLayer", "2" & "6" & "16")
+))

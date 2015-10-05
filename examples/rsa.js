@@ -1,8 +1,17 @@
+var config = require('../rsa/config');
+config.redirectOutput();
+
 var _ = require('underscore');
 var numeric = require('numeric');
 
-var NUM_ATTRS = 3;
-var HIDDEN_LAYER_1 = 6;
+config.addOption('l2Coeff', 0.01);
+config.addOption('learnRate', 0.01);
+config.addOption('hiddenLayer', 6);
+
+var options = config.getOptions();
+
+var NUM_ATTRS = 2;
+var HIDDEN_LAYER_1 = options.hiddenLayer;
 var NUM_WORDS = 1;  // TODO: can't do more than 1 here in the VI implementation
 var A = 2;
 var B = 3;
@@ -20,13 +29,27 @@ var trueTarget = function(theta) {
   };
 };
 
-var trueRSADist = function(theta, xs, ys) {
+var getLiteralLogProbs = function(theta, xs, ys) {
   var literalScores = _.map(xs, function(x) {
     return _.map(ys, function(y) {
       return mapDot(theta, featurize(x, y));
     });
   });
-  var literalLogProbs = _.map(literalScores, logNormalize);
+  return _.map(literalScores, logNormalize);
+};
+
+var trueLiteralDist = function(theta, xs, ys) {
+  return _.map(getLiteralLogProbs(theta, xs, ys), numeric.exp);
+};
+
+var trueS1Dist = function(theta, xs, ys) {
+  var literalLogProbs = getLiteralLogProbs(theta, xs, ys);
+  var speakerLogProbs = _.map(numeric.transpose(literalLogProbs), logNormalize);
+  return _.map(speakerLogProbs, numeric.exp);
+};
+
+var trueRSADist = function(theta, xs, ys) {
+  var literalLogProbs = getLiteralLogProbs(theta, xs, ys);
   var speakerLogProbs = _.map(numeric.transpose(literalLogProbs), logNormalize);
   var listenerLogProbs = _.map(numeric.transpose(speakerLogProbs), logNormalize);
   return _.map(listenerLogProbs, numeric.exp);
@@ -47,14 +70,14 @@ var trueGradient = function(theta, xs, ys, x, y) {
   var grad = y1.grad[xIndex][yIndex];
   var estimate = estimateGrad(theta, xs, ys, xIndex, yIndex);
   var discrepancy = mapNorm(mapSub(grad, estimate));
-  //if (discrepancy > 1e-4) {
+  console.log('grad discrepancy:' + discrepancy);
+  if (discrepancy > 1e-4) {
     console.log('full:');
     console.log(grad);
     console.log('numerical:');
     console.log(estimate);
-    console.log('discrepancy = ' + discrepancy + ')');
-  //  throw 'Failed gradient check (discrepancy = ' + discrepancy + ')';
-  //}
+    throw 'Failed gradient check (discrepancy = ' + discrepancy + ')';
+  }
   return grad;
 };
 
@@ -188,12 +211,12 @@ var allBooleanVecs = function(n) {
   return result;
 };
 
-var fullVIDist = function(phi, xs, ys) {
+var fullVIDist = function(phi, xs, ys, inDim, hiddenDim, outDim) {
   var probs = [];
   for (var i = 0; i < xs.length; i++) {
     var probsX = [];
     for (var j = 0; j < ys.length; j++) {
-      var prob = variationalProb(phi, NUM_ATTRS, HIDDEN_LAYER_1, NUM_WORDS, xs[i], ys[j]);
+      var prob = variationalProb(phi, inDim, hiddenDim, outDim, xs[i], ys[j]);
       probsX.push(prob);
     }
     probs.push(probsX);
@@ -436,6 +459,7 @@ var guide = function(inputSize, hiddenSize, outputSize, initialParams) {
 };
 
 var THETA_TRUE = {
+  bias: 0.0,
   "0": 0.0, "1": 0.1, "2": 0.2, "3": 0.3,
   "0+1": 0.01, "0+2": 0.02, "0+3": 0.03,
   "1+2": 0.12, "1+3": 0.13, "2+3": 0.23,
@@ -444,19 +468,26 @@ var THETA_TRUE = {
 };
 
 var dataset = [];
-for (var i = 0; i < 10000; i++) {
+for (var i = 0; i < 1000; i++) {
   var example = target(THETA_TRUE)();
   dataset.push(example);
 }
 
-
 var theta = {
+  bias: -1,
+  "0": 0.5, "1": 0.5, "0+1": -0.5,
+};
+
+/*
+var theta = {
+  bias: 0,
   "0": 0, "1": 0, "2": 0, "3": 0,
   "0+1": 0, "0+2": 0, "0+3": 0,
   "1+2": 0, "1+3": 0, "2+3": 0,
   "0-1": 0, "0-2": 0, "0-3": 0,
   "1-2": 0, "1-3": 0, "2-3": 0,
 };
+*/
 
 
 var phi = {};
@@ -473,8 +504,8 @@ var vippOptions = {
 
 var numGradientSamples = 100;
 var batchSize = 20;
-var l2Coeff = 0.01;
-var learnRate = 0.01;
+var l2Coeff = options.l2Coeff;
+var learnRate = options.learnRate;
 var absTol = 0.00001;
 
 numeric.precision = 4;
@@ -483,7 +514,7 @@ var ALL_X = allBooleanVecs(NUM_ATTRS);
 var ALL_Y = allBooleanVecs(NUM_WORDS);
 
 
-while(true) {
+//while(true) {
   var absChange = 0;
   for(var k = 0; k < dataset.length; /* next batch */) {
     var batch = [];
@@ -553,11 +584,27 @@ while(true) {
     console.log('dataset empirical dist:');
     console.log(numeric.prettyPrint(empDist));
 
+    var litDist = trueLiteralDist(theta, ALL_X, ALL_Y);
+    console.log('L0 dist (from theta):');
+    console.log(numeric.prettyPrint(litDist));
+
+    var viL0Dist = fullVIDist(phi, ALL_X, ALL_Y, NUM_ATTRS, HIDDEN_LAYER_1, NUM_WORDS);
+    console.log('approximate L0 dist (from phi):');
+    console.log(numeric.prettyPrint(viL0Dist));
+
+    var s1Dist = trueS1Dist(theta, ALL_X, ALL_Y);
+    console.log('S1 dist (from theta):');
+    console.log(numeric.prettyPrint(s1Dist));
+
+    var viS1Dist = fullVIDist(chi, ALL_Y, ALL_X, NUM_WORDS, HIDDEN_LAYER_1, NUM_ATTRS);
+    console.log('approximate S1 dist (from chi):');
+    console.log(numeric.prettyPrint(viS1Dist));
+
     var thetaDist = trueRSADist(theta, ALL_X, ALL_Y);
     console.log('full learned RSA dist (from theta):');
     console.log(numeric.prettyPrint(thetaDist));
 
-    var viDist = fullVIDist(psi, ALL_X, ALL_Y);
+    var viDist = fullVIDist(psi, ALL_X, ALL_Y, NUM_ATTRS, HIDDEN_LAYER_1, NUM_WORDS);
     console.log('approximate VI dist (from psi):');
     console.log(numeric.prettyPrint(viDist));
 
@@ -586,10 +633,10 @@ while(true) {
     var llVI = logLikelihood(dataset, viDist, ALL_X, ALL_Y);
     console.log('llVI:' + llVI);
 
-    if (absChange < absTol) break;
+    /*if (absChange < absTol)*/ break;
   }
-  if (absChange < absTol) break;
-}
+//  if (absChange < absTol) break;
+//}
 //var paramsCopy = JSON.parse(JSON.stringify(result.params));
 //console.log(JSON.stringify(paramsCopy, null, 4));
 

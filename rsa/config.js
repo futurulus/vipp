@@ -118,12 +118,12 @@ module.exports = new (function () {
         console.log(err.stack);
       }
     } else {
-      fs.writeFile(filePath, JSON.stringify(data) + '\n', options, emptyCallback);
+      fs.writeFileSync(filePath, JSON.stringify(data) + '\n', options);
     }
   };
 
   this.dumpPretty = function(data, filename, options) {
     var filePath = config.getFilePath(filename);
-    fs.writeFile(filePath, JSON.stringify(data, null, 2) + '\n', options, emptyCallback);
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', options);
   };
 })();
