@@ -1,3 +1,7 @@
+// Should print:
+// TypeError (number is not a function) on line with countsDist();
+// VIPP gives:
+// TypeError (number is not a function) on one of the for loop lines
 var countsDist = 0;
 
 for (var k = 0; k < 20; k++) {
